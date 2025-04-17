@@ -15,12 +15,12 @@ export default new NativeFunction({
   description: "Starts a 'Guess the Number' game.",
   unwrap: false,
   args: [
-     Arg.requiredString("options", "Game configuration options."),
-     Arg.optionalString(
-       "result",
-       "Env variable to store results (Default: result)",
-     ),
-   ],
+    Arg.requiredString("options", "Game configuration options."),
+    Arg.optionalString(
+      "result",
+      "Env variable to store results (Default: result)",
+    ),
+  ],
   brackets: true,
   async execute(ctx) {
     let env = this.data.fields![1];
@@ -54,18 +54,23 @@ export default new NativeFunction({
         (ctx.interaction?.user as any)?.id ??
         null;
 
-      const message = await (ctx.send as (options: any) => Promise<Message>)({
-        embeds: [
-          {
-            title: "🎯 Guess The Number!",
-            description: "Guess a number between 1 and 100.",
-            color: "#00bfff",
-          },
-        ],
-      });
-
       if (!ctx.channel || !("createMessageCollector" in ctx.channel)) {
         return this.customError("Channel is not messageable.");
+      }
+
+      const embedOptions = opts.embed ?? {};
+      const embed = {
+        title: embedOptions.title ?? "🎯 Guess The Number!",
+        description: `Guess a number between **${min}** and **${max}**.`,
+        color: embedOptions.color
+          ? parseInt(embedOptions.color.replace("#", ""), 16)
+          : 0x00bfff,
+      };
+
+      if (ctx?.channel?.isTextBased?.()) {
+        const message = await ctx.channel.send({
+          embeds: [embed],
+        });
       }
 
       const collector = (ctx.channel as any).createMessageCollector({
@@ -76,17 +81,35 @@ export default new NativeFunction({
       collector.on("collect", (msg: any) => {
         const guess = parseInt(msg.content);
         if (isNaN(guess)) return;
-        if (guess > number) msg.reply("📉 Too high!");
-        else if (guess < number) msg.reply("📈 Too low!");
-        else {
+        if (guess === number) {
           msg.reply(`🎉 You got it! The number was **${number}**.`);
           collector.stop("guessed");
         }
       });
 
-      collector.on("end", (_: any, reason: string) => {
+      collector.on("end", async (_: any, reason: string) => {
+        const isWin = reason === "guessed";
+
+        if (!ctx.channel || !("createMessageCollector" in ctx.channel)) {
+          return this.customError("Channel is not messageable.");
+        }
+
+        if (ctx?.channel?.isTextBased?.()) {
+          const message = await ctx.channel.send({
+            embeds: [
+              {
+                title: isWin ? "🎉 You Won!" : "⌛ Game Over",
+                description: isWin
+                  ? `You guessed the number **${number}** correctly!`
+                  : `Time's up! The correct number was **${number}**.`,
+                color: isWin ? 0x00ff88 : 0xff4444,
+              },
+            ],
+          });
+        }
+
         resolve({
-          result: reason === "guessed" ? "win" : "timeout",
+          result: isWin ? "win" : "timeout",
           number,
           player: authorId,
           options: opts,

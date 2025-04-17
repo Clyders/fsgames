@@ -9,7 +9,7 @@ exports.default = new forgescript_1.NativeFunction({
     description: "Starts a 'Guess the Number' game.",
     unwrap: false,
     args: [
-        forgescript_1.Arg.requiredString("options", "Game configuration options."),
+        forgescript_1.Arg.optionalString("options", "Game configuration options."),
         forgescript_1.Arg.optionalString("result", "Env variable to store results (Default: result)"),
     ],
     brackets: true,

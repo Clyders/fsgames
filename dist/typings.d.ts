@@ -39,4 +39,13 @@ export interface IConnect4GameOptions {
     requestMessage: string;
     rejectMessage: string;
 }
+export interface IGuessNumberGameOptions {
+    embed?: {
+        title?: string;
+        color?: string;
+    };
+    min?: number;
+    max?: number;
+    timeoutTime?: number;
+}
 //# sourceMappingURL=typings.d.ts.map

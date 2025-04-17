@@ -9,7 +9,7 @@ import { getGameOptionFunctionNames } from "../../../util";
 import { Message } from "discord.js";
 
 export default new NativeFunction({
-  name: "$startGuessNumberGame",
+  name: "$startGTNGame",
   aliases: ["$startGuessNumber", "$gtn", "$startGTN"],
   version: "1.0.0",
   description: "Starts a 'Guess the Number' game.",
@@ -27,7 +27,7 @@ export default new NativeFunction({
     ctx.setEnvironmentKey("__guess_number__game__options__", {});
 
     let optionFunctions: CompiledFunction[] = [];
-    getGameOptionFunctionNames("guessnumber").forEach((name) => {
+    getGameOptionFunctionNames("gtn").forEach((name) => {
       let opts = this.getFunctions(0, { name } as NativeFunction);
       optionFunctions.push(...opts);
     });

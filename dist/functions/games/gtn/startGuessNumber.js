@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const forgescript_1 = require("@tryforge/forgescript");
 const util_1 = require("../../../util");
 exports.default = new forgescript_1.NativeFunction({
-    name: "$startGuessNumberGame",
+    name: "$startGTNGame",
     aliases: ["$startGuessNumber", "$gtn", "$startGTN"],
     version: "1.0.0",
     description: "Starts a 'Guess the Number' game.",
@@ -17,7 +17,7 @@ exports.default = new forgescript_1.NativeFunction({
         let env = this.data.fields[1];
         ctx.setEnvironmentKey("__guess_number__game__options__", {});
         let optionFunctions = [];
-        (0, util_1.getGameOptionFunctionNames)("guessnumber").forEach((name) => {
+        (0, util_1.getGameOptionFunctionNames)("gtn").forEach((name) => {
             let opts = this.getFunctions(0, { name });
             optionFunctions.push(...opts);
         });

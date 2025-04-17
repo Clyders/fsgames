@@ -3,6 +3,7 @@ import { IGuessNumberGameOptions } from "../../../../typings";
 
 export default new NativeFunction({
   name: "$setGuessNumberRange",
+  aliases: ["$setRange", "$gtnRange", "$setGtnRange"],
   version: "1.0.0",
   description: "Sets min and max range for Guess the Number.",
   unwrap: true,

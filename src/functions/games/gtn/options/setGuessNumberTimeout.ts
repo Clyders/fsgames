@@ -4,6 +4,7 @@ import { TimeParser } from "@tryforge/forgescript/dist/constants";
 
 export default new NativeFunction({
   name: "$setGuessNumberTimeout",
+  aliases: ["$setTimeout", "$gtnTimeout", "$setGtnTimeout", "$setTime"],
   version: "1.0.0",
   description: "Sets the timeout for the game.",
   unwrap: true,

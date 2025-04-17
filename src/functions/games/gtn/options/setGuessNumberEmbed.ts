@@ -5,6 +5,7 @@ type PROPS = keyof IGuessNumberGameOptions["embed"];
 
 export default new NativeFunction({
   name: "$setGuessNumberEmbed",
+  aliases: ["$setEmbed", "$gtnEmbed", "$setGtnEmbed"],
   version: "1.0.0",
   description: "Sets embed options for Guess the Number game.",
   unwrap: true,

@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const forgescript_1 = require("@tryforge/forgescript");
 exports.default = new forgescript_1.NativeFunction({
     name: "$setGuessNumberEmbed",
+    aliases: ["$setEmbed", "$gtnEmbed", "$setGtnEmbed"],
     version: "1.0.0",
     description: "Sets embed options for Guess the Number game.",
     unwrap: true,

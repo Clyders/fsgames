@@ -4,6 +4,7 @@ const forgescript_1 = require("@tryforge/forgescript");
 const constants_1 = require("@tryforge/forgescript/dist/constants");
 exports.default = new forgescript_1.NativeFunction({
     name: "$setGuessNumberTimeout",
+    aliases: ["$setTimeout", "$gtnTimeout", "$setGtnTimeout", "$setTime"],
     version: "1.0.0",
     description: "Sets the timeout for the game.",
     unwrap: true,

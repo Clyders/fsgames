@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const forgescript_1 = require("@tryforge/forgescript");
 exports.default = new forgescript_1.NativeFunction({
     name: "$setGuessNumberRange",
+    aliases: ["$setRange", "$gtnRange", "$setGtnRange"],
     version: "1.0.0",
     description: "Sets min and max range for Guess the Number.",
     unwrap: true,

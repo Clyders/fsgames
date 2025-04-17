@@ -14,11 +14,13 @@ export default new NativeFunction({
   version: "1.0.0",
   description: "Starts a 'Guess the Number' game.",
   unwrap: false,
-args: [
-  Arg.optionalString("options", "Game configuration options."),
-  Arg.optionalString("result", "Env variable to store results (Default: result)"),
-],
-
+  args: [
+     Arg.requiredString("options", "Game configuration options."),
+     Arg.optionalString(
+       "result",
+       "Env variable to store results (Default: result)",
+     ),
+   ],
   brackets: true,
   async execute(ctx) {
     let env = this.data.fields![1];

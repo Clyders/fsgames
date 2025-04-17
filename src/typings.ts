@@ -51,3 +51,12 @@ export interface IGuessNumberGameOptions {
   max?: number;
   timeoutTime?: number;
 }
+
+export interface IRPSGameOptions {
+  vs?: "bot" | string;
+  timeout?: number;
+  embed?: {
+    title?: string;
+    color?: string;
+  };
+}

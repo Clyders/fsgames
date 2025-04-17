@@ -6,7 +6,6 @@ import {
 } from "@tryforge/forgescript";
 import { IGuessNumberGameOptions } from "../../../typings";
 import { getGameOptionFunctionNames } from "../../../util";
-import { Message } from "discord.js";
 
 export default new NativeFunction({
   name: "$startGTNGame",

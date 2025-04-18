@@ -27,6 +27,9 @@ exports.default = new forgescript_1.NativeFunction({
             if (!this["isValidReturnType"](result))
                 return result;
         }
+        if (!ctx.channel || !("createMessageCollector" in ctx.channel)) {
+            return this.customError("Channel is not messageable.");
+        }
         const opts = ctx.getEnvironmentKey("__rps_game_options__");
         ctx.deleteEnvironmentKey("__rps_game_options__");
         const authorId = ctx.author?.id ??
@@ -42,25 +45,39 @@ exports.default = new forgescript_1.NativeFunction({
         const embedColor = opts.embed?.color
             ? (0, discord_js_1.resolveColor)(opts.embed.color)
             : (0, discord_js_1.resolveColor)("#5865F2");
-        const embed = {
-            title: opts.embed?.title ?? "✊ Rock Paper Scissors!",
-            color: embedColor,
-            description: isPvBot
+        const getEmbedDescription = () => {
+            let desc = isPvBot
                 ? "Click a button to make your choice!"
-                : `<@${authorId}> vs <@${opponentId}> — click a button to play!`,
+                : `<@${authorId}> vs <@${opponentId}> — click a button to play!`;
+            if (selections[authorId]) {
+                desc += `\n\n🧑 <@${authorId}> picked **${selections[authorId]}**.`;
+            }
+            if (!isPvBot && selections[opponentId]) {
+                desc += `\n🧑 <@${opponentId}> picked **${selections[opponentId]}**.`;
+            }
+            return desc;
         };
-        const row = new discord_js_1.ActionRowBuilder().addComponents(choices.map((choice) => new discord_js_1.ButtonBuilder()
+        const makeButtons = (disabled = false) => new discord_js_1.ActionRowBuilder().addComponents(choices.map((choice) => new discord_js_1.ButtonBuilder()
             .setCustomId(`rps:${choice}`)
             .setLabel(choice.charAt(0).toUpperCase() + choice.slice(1))
-            .setStyle(discord_js_1.ButtonStyle.Primary)));
-        const msg = await ctx.send({
-            embeds: [embed],
-            components: [row],
+            .setStyle(discord_js_1.ButtonStyle.Primary)
+            .setDisabled(disabled)));
+        const sentMsg = await ctx.channel.send({
+            embeds: [
+                {
+                    title: opts.embed?.title ?? "✊ Rock Paper Scissors!",
+                    color: embedColor,
+                    description: getEmbedDescription(),
+                },
+            ],
+            components: [makeButtons()],
         });
         const timeout = opts.timeout ?? 30000;
-        const filter = (i) => [authorId, opponentId].includes(i.user.id) &&
-            i.customId.startsWith("rps:");
-        const collector = msg.createMessageComponentCollector({ time: timeout, filter });
+        const collector = ctx.channel.createMessageComponentCollector({
+            time: timeout,
+            filter: (i) => [authorId, opponentId].includes(i.user.id) &&
+                i.customId.startsWith("rps:"),
+        });
         collector.on("collect", async (interaction) => {
             const userId = interaction.user.id;
             const choice = interaction.customId.split(":")[1];
@@ -69,12 +86,21 @@ exports.default = new forgescript_1.NativeFunction({
             }
             selections[userId] = choice;
             await interaction.deferUpdate();
+            await sentMsg.edit({
+                embeds: [
+                    {
+                        title: opts.embed?.title ?? "✊ Rock Paper Scissors!",
+                        description: getEmbedDescription(),
+                        color: embedColor,
+                    },
+                ],
+                components: [makeButtons(true)],
+            });
             if (isPvBot) {
-                const botChoice = choices[Math.floor(Math.random() * choices.length)];
-                selections["bot"] = botChoice;
+                selections["bot"] = choices[Math.floor(Math.random() * choices.length)];
                 collector.stop("complete");
             }
-            if (!isPvBot && selections[authorId] && selections[opponentId]) {
+            else if (selections[authorId] && selections[opponentId]) {
                 collector.stop("complete");
             }
         });
@@ -114,10 +140,10 @@ exports.default = new forgescript_1.NativeFunction({
                             : `🎉 <@${opponentId}> wins! **${p2}** beats **${p1}**.`;
                     }
                 }
-                await msg.edit({
+                await sentMsg.edit({
                     embeds: [
                         {
-                            title: embed.title,
+                            title: opts.embed?.title ?? "✊ Rock Paper Scissors!",
                             description: winnerText,
                             color: embedColor,
                         },

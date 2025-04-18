@@ -8,9 +8,8 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  Message,
   resolveColor,
-  ColorResolvable
+  ColorResolvable,
 } from "discord.js";
 import { IRPSGameOptions } from "../../../typings";
 import { getGameOptionFunctionNames } from "../../../util";
@@ -41,6 +40,10 @@ export default new NativeFunction({
       if (!this["isValidReturnType"](result)) return result;
     }
 
+    if (!ctx.channel || !("createMessageCollector" in ctx.channel)) {
+      return this.customError("Channel is not messageable.");
+    }
+
     const opts = ctx.getEnvironmentKey("__rps_game_options__") as IRPSGameOptions;
     ctx.deleteEnvironmentKey("__rps_game_options__");
 
@@ -59,37 +62,54 @@ export default new NativeFunction({
     const selections: Record<string, string> = {};
 
     const embedColor = opts.embed?.color
-  ? resolveColor(opts.embed.color as ColorResolvable)
-  : resolveColor("#5865F2");
+      ? resolveColor(opts.embed.color as ColorResolvable)
+      : resolveColor("#5865F2");
 
-    const embed = {
-      title: opts.embed?.title ?? "✊ Rock Paper Scissors!",
-      color: embedColor,
-      description: isPvBot
+    const getEmbedDescription = () => {
+      let desc = isPvBot
         ? "Click a button to make your choice!"
-        : `<@${authorId}> vs <@${opponentId}> — click a button to play!`,
+        : `<@${authorId}> vs <@${opponentId}> — click a button to play!`;
+
+      if (selections[authorId]) {
+        desc += `\n\n🧑 <@${authorId}> picked **${selections[authorId]}**.`;
+      }
+      if (!isPvBot && selections[opponentId]) {
+        desc += `\n🧑 <@${opponentId}> picked **${selections[opponentId]}**.`;
+      }
+
+      return desc;
     };
 
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      choices.map((choice) =>
-        new ButtonBuilder()
-          .setCustomId(`rps:${choice}`)
-          .setLabel(choice.charAt(0).toUpperCase() + choice.slice(1))
-          .setStyle(ButtonStyle.Primary),
-      ),
-    );
+    const makeButtons = (disabled = false) =>
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        choices.map((choice) =>
+          new ButtonBuilder()
+            .setCustomId(`rps:${choice}`)
+            .setLabel(choice.charAt(0).toUpperCase() + choice.slice(1))
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(disabled)
+        )
+      );
 
-    const msg = await (ctx.send as (opt: any) => Promise<Message>)({
-      embeds: [embed],
-      components: [row],
+    const sentMsg = await ctx.channel.send({
+      embeds: [
+        {
+          title: opts.embed?.title ?? "✊ Rock Paper Scissors!",
+          color: embedColor,
+          description: getEmbedDescription(),
+        },
+      ],
+      components: [makeButtons()],
     });
 
     const timeout = opts.timeout ?? 30000;
-    const filter = (i: any) =>
-      [authorId, opponentId].includes(i.user.id) &&
-      i.customId.startsWith("rps:");
 
-    const collector = msg.createMessageComponentCollector({ time: timeout, filter });
+    const collector = (ctx.channel as any).createMessageComponentCollector({
+      time: timeout,
+      filter: (i: any) =>
+        [authorId, opponentId].includes(i.user.id) &&
+        i.customId.startsWith("rps:"),
+    });
 
     collector.on("collect", async (interaction: any) => {
       const userId = interaction.user.id;
@@ -103,21 +123,27 @@ export default new NativeFunction({
 
       await interaction.deferUpdate();
 
-      // PvBot: resolve immediately
-      if (isPvBot) {
-        const botChoice = choices[Math.floor(Math.random() * choices.length)];
-        selections["bot"] = botChoice;
-        collector.stop("complete");
-      }
+      await sentMsg.edit({
+        embeds: [
+          {
+            title: opts.embed?.title ?? "✊ Rock Paper Scissors!",
+            description: getEmbedDescription(),
+            color: embedColor,
+          },
+        ],
+        components: [makeButtons(true)], // disable buttons after interaction
+      });
 
-      // PvP: wait for both
-      if (!isPvBot && selections[authorId] && selections[opponentId]) {
+      if (isPvBot) {
+        selections["bot"] = choices[Math.floor(Math.random() * choices.length)];
+        collector.stop("complete");
+      } else if (selections[authorId] && selections[opponentId]) {
         collector.stop("complete");
       }
     });
 
     return await new Promise((resolve) => {
-      collector.on("end", async (_, reason) => {
+      collector.on("end", async (_: any, reason: string) => {
         const p1 = selections[authorId];
         const p2 = selections[opponentId];
 
@@ -154,10 +180,10 @@ export default new NativeFunction({
           }
         }
 
-        await msg.edit({
+        await sentMsg.edit({
           embeds: [
             {
-              title: embed.title,
+              title: opts.embed?.title ?? "✊ Rock Paper Scissors!",
               description: winnerText,
               color: embedColor,
             },
@@ -167,8 +193,8 @@ export default new NativeFunction({
 
         let envKey = await this["resolveCode"](ctx, env ?? "result");
         if (!this["isValidReturnType"](envKey)) return envKey;
-        ctx.setEnvironmentKey(envKey.value, result);
 
+        ctx.setEnvironmentKey(envKey.value, result);
         return resolve(this.successJSON(result));
       });
     });

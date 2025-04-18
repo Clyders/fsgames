@@ -60,3 +60,18 @@ export interface IRPSGameOptions {
     color?: string;
   };
 }
+
+export interface ITTTGameOptions {
+  vs?: "bot" | string;
+  timeout?: number;
+  opponent?: string;
+  embed?: {
+    title?: string;
+    color?: string;
+  };
+  emojis?: {
+    x?: string;
+    o?: string;
+    blank?: string;
+  };
+}
